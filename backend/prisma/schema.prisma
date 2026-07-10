@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String          @id @default(uuid())
+  name         String
+  email        String          @unique
+  passwordHash String
+  createdAt    DateTime        @default(now())
+  
+  projects     ProjectMember[]
+  assignees    Assignee[]
+  comments     Comment[]
+}
+
+model Project {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime        @default(now())
+  
+  members     ProjectMember[]
+  boards      Board[]
+}
+
+model ProjectMember {
+  userId    String
+  projectId String
+  role      String   @default("member") // "admin" or "member"
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([userId, projectId])
+}
+
+model Board {
+  id        String   @id @default(uuid())
+  projectId String
+  name      String
+  
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  columns   Column[]
+}
+
+model Column {
+  id            String   @id @default(uuid())
+  boardId       String
+  name          String
+  positionIndex Int
+  
+  board         Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks         Task[]
+}
+
+model Task {
+  id            String       @id @default(uuid())
+  columnId      String
+  title         String
+  description   String?
+  positionIndex Int
+  priority      String       @default("Medium") // "Low", "Medium", "High"
+  dueDate       DateTime?
+  deletedAt     DateTime?    // Soft delete
+  
+  column        Column       @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  assignees     Assignee[]
+  comments      Comment[]
+  attachments   Attachment[]
+}
+
+model Assignee {
+  taskId String
+  userId String
+  
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@id([taskId, userId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  taskId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Attachment {
+  id        String @id @default(uuid())
+  taskId    String
+  filePath  String
+  fileName  String
+  mimeType  String
+  
+  task      Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
