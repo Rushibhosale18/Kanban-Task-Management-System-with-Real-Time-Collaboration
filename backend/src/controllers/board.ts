@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { io } from '../index';
 
 const prisma = new PrismaClient();
 
 export const getBoard = async (req: Request, res: Response) => {
   try {
     const { boardId } = req.params;
-    const board = await prisma.board.findUnique({
+    let board = await prisma.board.findUnique({
       where: { id: boardId },
       include: {
         columns: {
@@ -21,7 +22,25 @@ export const getBoard = async (req: Request, res: Response) => {
         }
       }
     });
-    if (!board) return res.status(404).json({ error: 'Board not found' });
+    
+    // Auto-seed for demo purposes if board doesn't exist
+    if (!board) {
+      board = await prisma.board.create({
+        data: {
+          id: boardId,
+          name: 'Premium Kanban Board',
+          columns: {
+            create: [
+              { title: 'To Do', positionIndex: 0 },
+              { title: 'In Progress', positionIndex: 1 },
+              { title: 'Review', positionIndex: 2 },
+              { title: 'Done', positionIndex: 3 }
+            ]
+          }
+        },
+        include: { columns: { include: { tasks: true } } }
+      });
+    }
     res.json(board);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -45,6 +64,7 @@ export const createTask = async (req: Request, res: Response) => {
     });
     
     // In a real app, you would emit a socket event here
+    io.emit('taskMoved');
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -77,7 +97,8 @@ export const moveTask = async (req: Request, res: Response) => {
       // Skipped for simplicity, as absolute ordering matters more than continuous integers
     });
 
-    res.json({ success: true });
+    io.emit('taskMoved');
+    res.json({ success: true, taskId, targetColumnId, newIndex });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

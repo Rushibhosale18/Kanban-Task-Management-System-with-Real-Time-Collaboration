@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,8 +11,10 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // MOCK implementation
-      localStorage.setItem('token', 'fake-jwt-token');
+      const endpoint = isLogin ? '/auth/login' : '/auth/signup';
+      const payload = isLogin ? { email, password } : { email, password, name: "User" };
+      const res = await api.post(endpoint, payload);
+      localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err) {
       alert('Failed to authenticate');
