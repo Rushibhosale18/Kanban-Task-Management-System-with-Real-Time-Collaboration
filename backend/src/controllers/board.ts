@@ -29,17 +29,20 @@ export const getBoard = async (req: Request, res: Response) => {
         data: {
           id: boardId,
           name: 'Premium Kanban Board',
+          project: {
+            create: { name: 'Default Project' }
+          },
           columns: {
             create: [
-              { title: 'To Do', positionIndex: 0 },
-              { title: 'In Progress', positionIndex: 1 },
-              { title: 'Review', positionIndex: 2 },
-              { title: 'Done', positionIndex: 3 }
+              { name: 'To Do', positionIndex: 0 },
+              { name: 'In Progress', positionIndex: 1 },
+              { name: 'Review', positionIndex: 2 },
+              { name: 'Done', positionIndex: 3 }
             ]
           }
         },
         include: { columns: { include: { tasks: true } } }
-      });
+      }) as any;
     }
     res.json(board);
   } catch (error) {

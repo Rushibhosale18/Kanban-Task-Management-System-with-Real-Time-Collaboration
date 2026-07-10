@@ -24,7 +24,7 @@ const Board = () => {
         columnOrder.push(col.id);
         newColumns[col.id] = {
           id: col.id,
-          title: col.title,
+          title: col.name, // backend uses name, frontend uses title
           taskIds: col.tasks.map((t: any) => t.id)
         };
         col.tasks.forEach((t: any) => {
